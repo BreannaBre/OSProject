@@ -4,6 +4,7 @@ from bcc.utils import printb
 import os
 import sys
 import time
+import argparse
 
 # CHANGE THESE PARAMETERS to set when a process should be flagged
 # write_limit is the max amount of writes a process can have in a set amount of time
@@ -12,6 +13,9 @@ write_limit = 100
 # ex: if 100 writes occur within 2 seconds, flag the program
 time_limit_seconds = 2
 
+parser = argparse.ArgumentParser()
+parser.add_argument("-A", "--ALLPID", help="summary also prints out all processes that have written at least once", action="store_true")
+args = parser.parse_args()
 
 # BPF program
 program = """
@@ -99,4 +103,10 @@ while True:
         for p in process_info:
             if p[0] in offending_processes:
                 print("%-8d %-20s %-5d" % (p[0], p[1], offending_processes[p[0]]))
+        # add iddtional info if -a was used
+        if args.ALLPID:
+            print("\nAll Processes that have written in this program's lifetime")
+            printb(b"%-8s %-20s %-5s" % (b"PID", b"NAME", b"QUEUE SIZE AT TERM"))
+            for p in process_info:
+                print("%-8d %-20s %-5d" % (p[0], p[1], len(process_ts_list[p[0]])))
         sys.exit()
