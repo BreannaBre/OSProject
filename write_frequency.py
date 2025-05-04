@@ -5,6 +5,7 @@ import os
 import sys
 import time
 import argparse
+import signal
 
 # CHANGE THESE PARAMETERS to set when a process should be flagged
 # write_limit is the max amount of writes a process can have in a set amount of time
@@ -46,11 +47,7 @@ int write_func(struct pt_regs *ctx)
 }
 """
 
-# attach bpf program to wirte syscall
-b = BPF(text=program)
-b.attach_kprobe(event="vfs_write", fn_name="write_func")
-
-print("Tracing write_sync()... Ctrl-C to end")
+stop = False
 
 # keep track of timpstamps when processes wrote, additional info of process (such as name), and a count of times its been flagged
 process_ts_list = {}
@@ -91,22 +88,31 @@ def document_event(cpu, data, size):
 
     return 0
 
+# The program ignores exceptions weirdly, including KeyboardInterrupt. This is to fix it
+def signal_handler(sig, frame):
+    global stop
+    print("\nSummary of Flagged Processes")
+    printb(b"%-8s %-20s %-5s" % (b"PID", b"NAME", b"NUM TIMES FLAGGED"))
+    for p in process_info:
+        if p[0] in offending_processes:
+            print("%-8d %-20s %-5d" % (p[0], p[1], offending_processes[p[0]]))
+    # add addtional info if -a was used
+    if args.ALLPID:
+        print("\nAll Processes that have written in this program's lifetime")
+        printb(b"%-8s %-20s %-5s" % (b"PID", b"NAME", b"QUEUE SIZE AT TERM"))
+        for p in process_info:
+            print("%-8d %-20s %-5d" % (p[0], p[1], len(process_ts_list[p[0]])))
+    stop = True
+
+# attach bpf program to wirte syscall
+b = BPF(text=program)
+b.attach_kprobe(event="vfs_write", fn_name="write_func")
+print("Tracing write_sync()... Ctrl-C to end")
+signal.signal(signal.SIGINT, signal_handler)
 # This is the *main* part of the program
 b["events"].open_ring_buffer(document_event)
 while True:
-    try:
-        b.ring_buffer_poll()
-        time.sleep(0.5)
-    except KeyboardInterrupt:
-        print("\nSummary of Flagged Processes:")
-        printb(b"%-8s %-20s %-5s" % (b"PID", b"NAME", b"NUM TIMES FLAGGGED"))
-        for p in process_info:
-            if p[0] in offending_processes:
-                print("%-8d %-20s %-5d" % (p[0], p[1], offending_processes[p[0]]))
-        # add iddtional info if -a was used
-        if args.ALLPID:
-            print("\nAll Processes that have written in this program's lifetime")
-            printb(b"%-8s %-20s %-5s" % (b"PID", b"NAME", b"QUEUE SIZE AT TERM"))
-            for p in process_info:
-                print("%-8d %-20s %-5d" % (p[0], p[1], len(process_ts_list[p[0]])))
-        sys.exit()
+    if stop:
+        exit()
+    b.ring_buffer_poll()
+    time.sleep(0.5)
