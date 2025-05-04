@@ -14,7 +14,7 @@ write_limit = 100
 time_limit_seconds = 2
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-A", "--ALLPID", help="summary also prints out all processes that have written at least once", action="store_true")
+parser.add_argument("-A", "--ALLPID", help="summary also prints out all processes and their frequency count at term", action="store_true")
 args = parser.parse_args()
 
 # BPF program
