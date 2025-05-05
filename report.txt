@@ -1,45 +1,47 @@
 WHAT IS THIS PROGRAMMING PROJECT?
-This programing project utilizes ebpf to track the frequency processes are writing to a file by placing a hookpoint on the "vfs_write" system call. If a program is writing too frequently in a short amount of time (parameters that can be defined easily within the program), then the program is "flagged" and noted that it has met these specifications. Once the program ends, it will lastly print out a summary of all processes that were flagged, along with how many times within this process's lifetime it had occured. There is an optional program included with the sole purpose of getting flagged to help demonstrate the bcc program/
+This programing project utilizes ebpf to track the frequency processes that are writing to a file. This is done by placing a hook point on the "vfs_write" system call. If a program is writing too frequently in a short amount of time (determined parameters that can be defined easily within the program), then the program is "flagged" and noted that it has met these specifications. Once the program ends, it will lastly print out a summary of all processes that were flagged, along with how many times within this process's lifetime it had occurred. There is an optional program included in this project, made with the sole purpose of getting flagged to help demonstrate the bcc program.
 
 WHY MAKE THIS PROJECT?
-There are many characteristics within a system a kernel-level security software may monitor to look for anomolous behavior that occurs on a system. In this scenario, some malware involve writing into a large set of files quickly, such as ransomware encrypting data. While this demonstration is rudimentary, it still demonstrates the idea around how valuable system-level monitoring can be if properly implemented, for both prevention and damage control of attacks.
+There are many characteristics within a system that a kernel-level security software may monitor to look for anomalous behavior. In this scenario, some malwares involve writing into a large set of files quickly, such as ransomware encrypting data. While this demonstration is rudimentary, it still demonstrates the idea around how valuable system-level monitoring can be if properly implemented, for both prevention and damage control of attacks.
 
+INSTRUCTIONS
 SETUP USING SUBMITTED VM
-NOTE: If you have it installed, I highly recommend importing the OVA through VirtualBox. I cannot guarentee that other hypervisors will work properly as this VM was exported from VirtualBox.
-
+NOTE: If you have it installed, I highly recommend importing the OVA through VirtualBox. I cannot guarantee that other hypervisors will work properly as this VM was exported from VirtualBox.
 1. Boot up the VM image included in this submission
 If you want to access the VM via SSH, run this command on your host machine's terminal:
     ssh -p 3022 breannabreedlove@127.0.0.1
-The terminal will prompt for a password. Enter 'pass123'
-
+    This VM was created with a NAT network adapter, so port forwarding was needed to access the VM via SSH (Hence the local IP).
+    The terminal will prompt for a password. Enter 'pass123'.
+Otherwise, access the VM in whatever way you want, just note that at least 2 terminals may be needed.
 2. Now, cd into the directory "OSProject"
-You can now follow the instuctions for running the project found at the bottom of this page.
+You can now follow the instructions for running the project found at the bottom of this page.
 
 HOW TO SETUP USING THE SOURCE CODE
-If there's issues getting the VM to work (or you just want your own enviroment), here are instructions for setting up the enviroment in your own VM to run the source code.
-NOTE: My VM used Debian 12.9.0 amd64 ISO. I recommend doing the same to minimize any issues due to difference in enviroment.
+If there is issues getting the VM to work (or you just want your own environment), here are instructions for setting up the environment in your own VM to run the source code.
+NOTE: My VM used a Debian 12.9.0 amd64 ISO, allocated with 2 processors and 4096 MB base memory. I recommend setting your VM up similarly to minimize any issues due to differences in environment.
 
 Setting up BCC:
-NOTE: You do NOT need the recommended kernel configurations to run my program (in Debian at least)
-I will provide the instructions here for Debian, but you can find the instructions for other enviroments here: https://github.com/iovisor/bcc/blob/master/INSTALL.md
+NOTE: You do NOT need the recommended kernel configurations to run my program (in Debian at least).
+I will provide the instructions here for Debian, but you can find the instructions for other environments here: https://github.com/iovisor/bcc/blob/master/INSTALL.md.
 
 1. cd into /etc/apt/sources.list and include this in the file:
     deb http://cloudfront.debian.net/debian sid main
 2. now, run this command:
     sudo apt-get install -y bpfcc-tools libbpfcc libbpfcc-dev linux-headers-amd64
-
 You should have everything you need to be able to run the programs!
-My code can be found in this github repo: https://github.com/BreannaBre/OSProject
-Once you have the code within your VM, just follow the "How do I run the programming project" to understand what they do and why.
+
+My code can be found in this GitHub repo: https://github.com/BreannaBre/OSProject
+Once you have the code within your VM, just follow the "How do I run the programming project" section to understand what each program is doing and why.
+
 
 HOW DO I RUN THIS PROGRAMMING PROJECT?
-1. Before running the program, you will need run "su". The password is 'pass123'
-2. Run the command './file_writer.py'
-    This program repeadedly writes to a file quickly, and it meant to help demonstate the bcc program in action.
-7. In a seperate terminal, run the command './writing_frequency.py -A'
-    After a few seconds, you should see "Tracing write_sync()... Ctrl-C to end"
-    This mean the program is running. The program will not output anything else until it is either killed or a program is flagged.
-You should see information about file_writer.py such as it's process ID since the program should be getting flagged.
-8. Press Ctrl-C.
-    The program will end and a summary of the flagged processes will appear.
-    The '-A' arugument will optionally provide into on ALL processes that have ran, not just processes that were flagged.
+1. Before running the program, you will need to run "su". The password is 'pass123'.
+2. Run the command './file_writer.py'.
+    This program repeatedly writes to a file quickly, and it meant to help demonstrate the bcc program in action. This program is optional and not needed to run the actual bcc program.
+3. In a separate terminal, run the command './writing_frequency.py -A'
+    After a few seconds, you should see "Tracing write_sync()... Ctrl-C to end" appear in the terminal.
+    This means the program is running. The program will not output anything else Ctrl-C is pressed, or a program is flagged.
+If you have file_writer.py running, you should see information about file_writer.py appear in the terminal. This program should be getting flagged.
+4. Press Ctrl-C.
+    The program will end, and a summary of the flagged processes will appear.
+    The '-A' argument will additionally provide info on ALL processes that have ran, not just processes that were flagged.
